@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><?= uygulamaAdi ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        /* Gizleme ve gösterme işlemleri için basit animasyon */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans selection:bg-orange-200 overflow-x-hidden">
+
+
+    <!-- 1. SPLASH / YÜKLENİYOR EKRANI -->
+    <div id="loading-container" class="flex flex-col items-center justify-center flex-grow p-4 min-h-screen z-50">
+        <div class="relative flex items-center justify-center w-24 h-24 mb-5">
+            <div class="absolute inset-0 rounded-full border-4 border-slate-200"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
+            <img src="<?= logoUrl ?>" alt="Logo" class="h-12 w-12 object-contain absolute mix-blend-multiply">
+        </div>
+        <p class="text-slate-500 font-bold text-xs tracking-widest uppercase animate-pulse">SİSTEM YÜKLENİYOR...</p>
+    </div>
+
+
+    <!-- 2. GİRİŞ VE SİHİRBAZ EKRANI -->
+    <div id="login-container" class="hidden flex-col items-center justify-center flex-grow p-4 sm:p-6 min-h-screen">
+        <div class="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-md relative overflow-hidden">
+           
+            <!-- A. NORMAL GİRİŞ FORMU -->
+            <div id="normal-login-form" class="fade-in w-full">
+                <div class="text-center mb-8">
+                    <div class="inline-block mb-4 h-24">
+                        <img src="<?= logoUrl ?>" alt="Okul Logosu" class="max-h-full w-auto object-contain mix-blend-multiply mx-auto">
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight"><?= uygulamaAdi ?></h1>
+                    <p class="text-sm text-slate-500 mt-2">Lütfen ID ve şifrenizle giriş yapın</p>
+                </div>
+
+
+                <!-- Form etiketi kullanmıyoruz, Enter tuşunu JS ile yakalıyoruz -->
+                <div class="space-y-5" onkeypress="if(event.key === 'Enter') girisIsleminiBaslat()">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5 ml-1">Kullanıcı ID</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" id="userid" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-11 pr-4 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all shadow-sm">
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5 ml-1">Şifre</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" id="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-11 pr-12 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all shadow-sm">
+                            <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 px-4 flex items-center text-slate-400 hover:text-orange-600 focus:outline-none transition-colors">
+                                <i id="eye-icon" class="fa-solid fa-eye text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div id="error-msg" class="bg-red-50 text-red-600 border border-red-200 text-sm font-medium text-center p-3 rounded-xl hidden"></div>
+
+
+                    <button type="button" id="login-btn" onclick="girisIsleminiBaslat()" class="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-orange-600/30 flex items-center justify-center">
+                        <span>Giriş Yap</span><i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                   
+                    <div class="text-center pt-2">
+                        <button type="button" onclick="ekranDegistir('sifirlama')" class="text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors">
+                            <i class="fa-solid fa-key mr-1"></i> Şifremi Unuttum
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- B. ŞİFRE SIFIRLAMA EKRANLARI -->
+            <div id="password-reset-wizard" class="hidden fade-in w-full">
+               
+                <div class="flex justify-start mb-2">
+                    <button type="button" onclick="ekranDegistir('giris')" class="text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center">
+                        <i class="fa-solid fa-arrow-left mr-1.5"></i> Geri
+                    </button>
+                </div>
+               
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 text-orange-600 mb-4">
+                        <i class="fa-solid fa-unlock-keyhole text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">Şifre Sıfırlama</h2>
+                </div>
+
+
+                <!-- Adım 1: ID Sor -->
+                <div id="reset-step-1" class="space-y-4">
+                    <p class="text-sm text-slate-500 text-center mb-4">Lütfen kayıtlı <b>Kullanıcı ID</b>'nizi girin. E-posta adresinize doğrulama kodu göndereceğiz.</p>
+                    <input type="text" id="reset-id" placeholder="Kullanıcı ID" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-center font-bold tracking-widest focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    <button type="button" id="btn-step-1" onclick="koduGonder()" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition-all flex justify-center items-center">
+                        Kodu Gönder
+                    </button>
+                </div>
+
+
+                <!-- Adım 2: Kod ve Yeni Şifre -->
+                <div id="reset-step-2" class="hidden space-y-4">
+                    <p class="text-sm text-slate-500 text-center mb-4">Kodunuz iletildi. Lütfen <b class="text-orange-600">6 haneli</b> kodu ve yeni şifrenizi girin.</p>
+                    <input type="text" id="reset-code" placeholder="------" maxlength="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-center text-2xl font-extrabold tracking-[0.5em] focus:ring-2 focus:ring-orange-500 focus:outline-none uppercase">
+                   
+                    <input type="password" id="reset-new-pass" placeholder="Yeni Şifreniz" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-center font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none mt-4">
+                   
+                    <button type="button" id="btn-step-2" onclick="yeniSifreKaydet()" class="w-full bg-orange-600 text-white font-bold py-3.5 rounded-xl hover:bg-orange-700 transition-all shadow-lg mt-4 flex justify-center items-center">
+                        <i class="fa-solid fa-check-circle mr-2"></i> Şifreyi Kaydet
+                    </button>
+                </div>
+
+
+                <div id="reset-alert" class="mt-4 text-sm font-medium text-center p-3 rounded-xl hidden"></div>
+            </div>
+           
+        </div>
+    </div>
+
+
+    <!-- 3. UYGULAMA PORTAL EKRANI -->
+    <div id="portal-container" class="hidden flex-col p-4 sm:p-6 max-w-7xl mx-auto w-full flex-grow">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border border-slate-200 p-5 rounded-2xl mb-6 shadow-sm gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="p-2 bg-slate-50 rounded-xl shadow-inner border border-slate-100 flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16">
+                    <img src="<?= logoUrl ?>" alt="Logo" class="max-h-full max-w-full object-contain mix-blend-multiply drop-shadow-sm">
+                </div>
+                <div>
+                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900" id="welcome-text">Hoş Geldiniz</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Yetkili olduğunuz uygulamalar aşağıda listelenmiştir.</p>
+                </div>
+            </div>
+            <button onclick="cikisYap()" class="w-full sm:w-auto bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-5 py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center space-x-2 active:bg-slate-200">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Çıkış Yap</span>
+            </button>
+        </header>
+
+
+        <main id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pb-6"></main>
+       
+        <footer class="text-center py-5 bg-white border-t border-slate-200 mt-auto flex flex-col items-center justify-center space-y-2 shadow-inner rounded-2xl">
+            <span class="text-xs font-bold text-slate-500"><?= okulAdi ?> &copy; 2026</span>
+            <span class="text-xs font-extrabold text-orange-600 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100 flex items-center space-x-1.5 shadow-sm mt-1">
+                <i class="fa-solid fa-code"></i>
+                <span>Uygulama Yöneticisi: İnan ÖZBEK</span>
+            </span>
+        </footer>
+    </div>
+
+
+    <!-- 4. UYGULAMA İÇİ GÖRÜNTÜLEYİCİ -->
+    <div id="app-viewer" class="hidden flex-col fixed inset-0 z-50 bg-slate-100 h-[100dvh] w-full">
+        <div class="flex items-center justify-between bg-slate-900 px-4 py-3 shadow-lg">
+            <div class="flex items-center space-x-3 truncate">
+                <div class="bg-white p-1 rounded border border-slate-700 flex items-center justify-center h-8 w-8">
+                    <img src="<?= logoUrl ?>" alt="Logo" class="max-h-full max-w-full object-contain mix-blend-multiply">
+                </div>
+                <h3 id="viewer-title" class="text-white font-bold text-sm tracking-wide truncate">Uygulama</h3>
+            </div>
+            <button onclick="viewerKapat()" class="bg-slate-800 hover:bg-slate-700 text-orange-500 border border-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center space-x-2 active:bg-slate-600">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span class="hidden sm:inline">Ana Sayfaya Dön</span>
+                <span class="sm:hidden">Geri</span>
+            </button>
+        </div>
+        <div id="viewer-loader" class="absolute inset-0 flex items-center justify-center z-0 bg-slate-50 pt-16">
+            <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-300 border-t-orange-500"></div>
+        </div>
+        <iframe id="app-iframe" class="w-full h-full border-0 relative z-10" onload="document.getElementById('viewer-loader').classList.add('hidden');"></iframe>
+    </div>
+
+
+    <script>
+        // --- TEMEL SİSTEM ---
+        window.onload = function() {
+            var id = "";
+            var sifre = "";
+            try {
+                id = localStorage.getItem("borusan_userid");
+                sifre = sessionStorage.getItem("borusan_sifre");
+            } catch(e) {}
+
+
+            document.getElementById("loading-container").classList.add("hidden");
+
+
+            if (id && sifre) {
+                document.getElementById("userid").value = id;
+                document.getElementById("password").value = sifre;
+                document.getElementById("login-container").classList.remove("hidden");
+                document.getElementById("login-container").classList.add("flex");
+                girisIsleminiBaslat();
+            } else {
+                document.getElementById("login-container").classList.remove("hidden");
+                document.getElementById("login-container").classList.add("flex");
+            }
+        };
+
+
+        function girisIsleminiBaslat() {
+            var id = document.getElementById("userid").value.trim();
+            var sifre = document.getElementById("password").value.trim();
+            var btn = document.getElementById("login-btn");
+            var errDiv = document.getElementById("error-msg");
+
+
+            if(id === "" || sifre === "") return;
+
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span class="ml-2">Giriş Yapılıyor...</span>`;
+            errDiv.classList.add("hidden");
+
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span>Giriş Yap</span><i class="fa-solid fa-arrow-right ml-2"></i>`;
+                    if (res.basari) {
+                        try {
+                            localStorage.setItem("borusan_userid", id);
+                            sessionStorage.setItem("borusan_sifre", sifre);
+                        } catch(e) {}
+                       
+                        document.getElementById("login-container").classList.add("hidden");
+                        document.getElementById("login-container").classList.remove("flex");
+                        document.getElementById("portal-container").classList.remove("hidden");
+                        document.getElementById("portal-container").classList.add("flex");
+                        document.getElementById("welcome-text").innerText = "Hoş Geldiniz, " + res.adSoyad;
+                        renderApps(res.uygulamalar, res.yetkiler);
+                    } else {
+                        errDiv.innerText = res.mesaj;
+                        errDiv.classList.remove("hidden");
+                        try { sessionStorage.removeItem("borusan_sifre"); } catch(e){}
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span>Giriş Yap</span><i class="fa-solid fa-arrow-right ml-2"></i>`;
+                    errDiv.innerText = "Bağlantı Hatası.";
+                    errDiv.classList.remove("hidden");
+                })
+                .girisYap(id, sifre);
+        }
+
+
+        function cikisYap() {
+            try { sessionStorage.removeItem("borusan_sifre"); } catch(e){}
+            document.getElementById("portal-container").classList.add("hidden");
+            document.getElementById("portal-container").classList.remove("flex");
+            document.getElementById("login-container").classList.remove("hidden");
+            document.getElementById("login-container").classList.add("flex");
+            document.getElementById("password").value = "";
+        }
+
+
+        function togglePassword() {
+            var p = document.getElementById("password");
+            var e = document.getElementById("eye-icon");
+            if (p.type === "password") {
+                p.type = "text";
+                e.classList.replace("fa-eye", "fa-eye-slash");
+            } else {
+                p.type = "password";
+                e.classList.replace("fa-eye-slash", "fa-eye");
+            }
+        }
+
+
+        function renderApps(uygulamalar, yetkiler) {
+            var grid = document.getElementById("apps-grid");
+            grid.innerHTML = "";
+            var adSoyad = document.getElementById("welcome-text").innerText.replace("Hoş Geldiniz, ", "").trim();
+            var savedId = document.getElementById("userid").value;
+
+
+            uygulamalar.forEach(app => {
+                var yetkiObj = yetkiler[app.kod] || { aktif: false, yetki: "" };
+                var isAktif = yetkiObj.aktif;
+                var yetkiMetni = yetkiObj.yetki ? `Yetki: ${yetkiObj.yetki}` : "Yetkiniz Yok";
+                var card = document.createElement("div");
+               
+                if (isAktif) {
+                    card.className = "bg-white border border-slate-200 hover:border-orange-500 rounded-2xl p-5 transition-all shadow-sm hover:shadow-md flex flex-col justify-between cursor-pointer";
+                    card.onclick = function() {
+                        var baseUrl = app.link.trim();
+                        var ayrac = baseUrl.indexOf("?") === -1 ? "?" : "&";
+                        var url = baseUrl + ayrac + "id=" + savedId + "&ad=" + encodeURIComponent(adSoyad) + "&yetki=" + encodeURIComponent(yetkiObj.yetki);
+                        openAppViewer(url, app.ad);
+                    };
+                } else {
+                    card.className = "bg-slate-50 border border-slate-100 rounded-2xl p-5 opacity-60 flex flex-col justify-between cursor-not-allowed grayscale";
+                }
+
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-orange-50 text-orange-600 p-3 rounded-xl"><i class="fa-solid fa-window-maximize text-xl"></i></div>
+                            <span class="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-200 text-slate-600">${yetkiMetni}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-1">${app.ad}</h3>
+                        <p class="text-sm text-slate-500 line-clamp-2">${app.aciklama}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+
+        function openAppViewer(link, ad) {
+            document.getElementById("viewer-title").innerText = ad;
+            document.getElementById("viewer-loader").classList.remove("hidden");
+            document.getElementById("portal-container").classList.add("hidden");
+            document.getElementById("portal-container").classList.remove("flex");
+            document.getElementById("app-viewer").classList.remove("hidden");
+            document.getElementById("app-viewer").classList.add("flex");
+            document.getElementById("app-iframe").src = link;
+        }
+
+
+        function viewerKapat() {
+            document.getElementById("app-iframe").src = "";
+            document.getElementById("app-viewer").classList.add("hidden");
+            document.getElementById("app-viewer").classList.remove("flex");
+            document.getElementById("portal-container").classList.remove("hidden");
+            document.getElementById("portal-container").classList.add("flex");
+        }
+
+
+        // --- ŞİFRE SIFIRLAMA ---
+        var aktifSifirlamaId = "";
+
+
+        function ekranDegistir(hedef) {
+            var nForm = document.getElementById("normal-login-form");
+            var wForm = document.getElementById("password-reset-wizard");
+            var s1 = document.getElementById("reset-step-1");
+            var s2 = document.getElementById("reset-step-2");
+            var alertBox = document.getElementById("reset-alert");
+           
+            alertBox.classList.add("hidden");
+
+
+            if (hedef === 'sifirlama') {
+                nForm.classList.add("hidden");
+                wForm.classList.remove("hidden");
+                s1.classList.remove("hidden");
+                s2.classList.add("hidden");
+                document.getElementById("reset-id").value = document.getElementById("userid").value;
+            } else {
+                wForm.classList.add("hidden");
+                nForm.classList.remove("hidden");
+            }
+        }
+
+
+        function koduGonder() {
+            var id = document.getElementById("reset-id").value.trim();
+            var btn = document.getElementById("btn-step-1");
+            var aBox = document.getElementById("reset-alert");
+
+
+            if (!id) { aBox.innerText = "Kullanıcı ID girin."; aBox.classList.remove("hidden"); return; }
+
+
+            aktifSifirlamaId = id;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
+            aBox.classList.add("hidden");
+
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    btn.disabled = false;
+                    btn.innerHTML = "Kodu Gönder";
+                    aBox.innerText = res.mesaj;
+                    aBox.classList.remove("hidden");
+                    if (res.basari) {
+                        setTimeout(() => {
+                            document.getElementById("reset-step-1").classList.add("hidden");
+                            document.getElementById("reset-step-2").classList.remove("hidden");
+                            aBox.classList.add("hidden");
+                        }, 2000);
+                    }
+                })
+                .sifreSifirlamaTalebi(id);
+        }
+
+
+        function yeniSifreKaydet() {
+            var kod = document.getElementById("reset-code").value.trim();
+            var yeni = document.getElementById("reset-new-pass").value.trim();
+            var btn = document.getElementById("btn-step-2");
+            var aBox = document.getElementById("reset-alert");
+
+
+            if (kod.length !== 6 || yeni.length < 1) {
+                aBox.innerText = "Gerekli alanları doldurun.";
+                aBox.classList.remove("hidden");
+                return;
+            }
+
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
+            aBox.classList.add("hidden");
+
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    btn.disabled = false;
+                    btn.innerHTML = `Şifreyi Kaydet`;
+                    aBox.innerText = res.mesaj;
+                    aBox.classList.remove("hidden");
+                    if (res.basari) {
+                        setTimeout(() => {
+                            ekranDegistir('giris');
+                            document.getElementById("userid").value = aktifSifirlamaId;
+                            document.getElementById("password").value = "";
+                        }, 2500);
+                    }
+                })
+                .yeniSifreyiKaydet(aktifSifirlamaId, kod, yeni);
+        }
+    </script>
+</body>
+</html>
+
